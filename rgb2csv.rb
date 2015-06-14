@@ -1,4 +1,5 @@
 require 'tabula'
+require 'pp'
 
 pdf_file = ARGV.first
 
@@ -14,8 +15,13 @@ extractor.extract.each do |page|
     Tabula::Ruling.new(0, n, 0, 1000)
   }
 
-  print page.get_area(page_area)
-            .get_table(:vertical_rulings => vertical_rulings)
-            .to_csv
+  rows = page.get_area(page_area)
+             .get_table(:vertical_rulings => vertical_rulings)
+             .rows
+             .map {|row|
+               # extract text from text elements
+               row.map { |te| te.text.gsub(/\s+/, '').strip }
+             }
+  pp rows
 end
 extractor.close!
