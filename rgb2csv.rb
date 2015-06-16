@@ -3,14 +3,14 @@ require 'pp'
 
 def extract_data_from(pdf_file)
   extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file, 1..2 )
-  data = extractor.extract.map { |page|
+  tables = extractor.extract.map { |page|
     table_area = select_table_area_from(page)
     table = extract_table_from(table_area)
     cleanup(table)
   }
   extractor.close!
 
-  data
+  combine(tables)
 end
 
 def select_table_area_from(page)
@@ -39,5 +39,20 @@ def cleanup(table)
   }
 end
 
+def combine(tables)
+  # All tables have the same header
+  # Ensure it stays a line of its own so we can concat to the rest
+  header = [tables[0][0]]
+
+  body = tables.map { |table| table[1..-1] }.flatten(1)
+
+  header.concat(body)
+end
+
+def csv_from(data)
+  data.map { |line| line.join(",") }.join("\n") + "\n"
+end
+
 pdf_file = ARGV.first
-pp extract_data_from(pdf_file)
+data = extract_data_from(pdf_file)
+print csv_from(data)
